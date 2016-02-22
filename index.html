@@ -1,0 +1,158 @@
+<html>
+<head>
+    <style>
+
+    </style>
+</head>
+<body>
+    <textarea name="graph-raw" class="graph-raw" cols="5" rows="5"></textarea>
+    <p>Image of graph: not implemented yet.</p>
+    <canvas class="graph-image"></canvas>
+    <p>Adjacency List:</p>
+    <pre class="graph-adjacency-list"></pre>
+    <p>Adjacency Matrix:</p>
+    <pre class="graph-adjacency-matrix"></pre>
+    <script>
+        (function() {
+            /**
+             * @typedef {Object} Edge
+             * @property {Number|String} from
+             * @property {Number|String} to
+             * @property {Number} [weight]
+             */
+
+            var graphRawBlock = document.querySelector('.graph-raw'),
+                graphAdjacencyList = document.querySelector('.graph-adjacency-list'),
+                graphAdjacencyMatrix = document.querySelector('.graph-adjacency-matrix'),
+                graphImageBlock = document.querySelector('.graph-image');
+
+            /**
+             * @param {Edge[]} edges
+             * @returns {Array}
+             */
+            var getAdjacencyList = function(edges) {
+                return edges.reduce(function(result, edge) {
+                    var toConnection,
+                        fromConnection;
+
+                    if (edge) {
+                        toConnection = { to: edge.to };
+                        fromConnection = { to: edge.from };
+
+                        if (typeof edge.weight !== 'undefined') {
+                            toConnection.weight = fromConnection.weight = edge.weight;
+                        }
+
+                        if (result[edge.from]) {
+                            result[edge.from].push(toConnection);
+                        } else {
+                            result[edge.from] = [ toConnection ];
+                        }
+
+                        if (result[edge.to]) {
+                            result[edge.to].push(fromConnection);
+                        } else {
+                            result[edge.to] = [ fromConnection ];
+                        }
+                    }
+
+                    return result;
+                }, []);
+            };
+
+            /**
+             * @param {Edge[]} edges
+             * @param {Number} numberOfVertexes
+             * @returns {Array[]}
+             */
+            var getAdjacencyMatrix = function(edges, numberOfVertexes) {
+                var matrix = [];
+
+                for (var i = 0; i < numberOfVertexes; i++) {
+                    matrix[i] = [];
+
+                    for (var j = 0; j < numberOfVertexes; j++) {
+                        matrix[i].push(0);
+                    }
+                }
+
+                edges.forEach(function(edge) {
+                    if (edge) {
+                        matrix[edge.from][edge.to] = edge.weight;
+                        matrix[edge.to][edge.from] = edge.weight;
+                    }
+                });
+
+                return matrix;
+            };
+
+            var printMatrix = function(matrix) {
+                var result = '';
+
+                matrix.forEach(function(row, i) {
+                    if (i === 0) {
+                        result += ' ';
+
+                        for (var j = 1; j < row.length; j++) {
+                            result += j;
+                        }
+                    } else {
+                        result += i;
+                        result += row.slice(1).join('');
+                    }
+
+                    result += '\n';
+                });
+
+                return result;
+            };
+
+            /**
+             * @param {String} rawGraph
+             * @returns {?Edge[]}
+             */
+            var getEdges = function(rawGraph) {
+                var list;
+
+                if (typeof rawGraph !== 'string') {
+                    return null;
+                }
+
+                list = rawGraph.split('\n').map(function(raw) {
+                    var rawEdge = raw.split(' ').map(function(item) { return parseInt(item, 10); }),
+                        edge = null;
+
+                    if (rawEdge.length >= 2 && ! isNaN(rawEdge[0]) && ! isNaN(rawEdge[1])) {
+                        edge = {
+                            from: rawEdge[0],
+                            to: rawEdge[1],
+                            weight: rawEdge[2] || 1
+                        };
+                    }
+
+                    return edge;
+                });
+
+                return list;
+            };
+
+            var onRawChange = function(e) {
+                var value = e.target.value,
+                    edges = getEdges(value),
+                    adjacencyList = getAdjacencyList(edges),
+                    adjacencyMatrix = getAdjacencyMatrix(edges, adjacencyList.length);
+
+                console.log('Edges: ', edges);
+                console.log('Adjacency List: ', adjacencyList);
+                console.log('Adjacency Matrix: ', adjacencyMatrix);
+
+                graphAdjacencyList.innerHTML = JSON.stringify(adjacencyList, null, 4);
+                graphAdjacencyMatrix.innerHTML = printMatrix(adjacencyMatrix);
+            };
+
+            graphRawBlock.onkeyup = onRawChange;
+            graphRawBlock.onblur = onRawChange;
+        })();
+    </script>
+</body>
+</html>
